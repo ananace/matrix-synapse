@@ -8,6 +8,7 @@ RUN apt-get update -yqq && apt-get install curl ca-certificates -yqq --no-instal
     && apt-get install matrix-synapse python-matrix-synapse-ldap3 python-psycopg2 -yqq --no-install-recommends \
     && apt-get autoclean -yqq \
     && rm -rf /var/lib/apt/
+
 ADD matrix-synapse.sh /usr/local/bin/matrix-synapse
 
 EXPOSE 8008 8448

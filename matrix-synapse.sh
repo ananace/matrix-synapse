@@ -2,7 +2,7 @@
 
 function join_by { local d=$1; shift; echo -n "$1"; shift; printf "%s" "${@/#/$d}"; }
 
-mkdir -p /var/lib/matrix-synapse/kubeconf.d
+mkdir -p /kubeconf.d
 mkdir -p /var/lib/matrix-synapse/signing
 
 # This needs to exist, so don't allow empty vars
@@ -104,4 +104,4 @@ EOF
 
 touch /var/log/matrix-synapse/homserver.log
 (tail -F /var/log/matrix-synapse/homeserver.log &)
-python -m synapse.app.homeserver --config-path=/etc/matrix-synapse/homeserver.yaml --config-path=/etc/matrix-synapse/conf.d/ --config-path=/var/lib/matrix-synapse/kubeconf.d/ "$@"
+python -m synapse.app.homeserver --config-path=/etc/matrix-synapse/homeserver.yaml --config-path=/etc/matrix-synapse/conf.d/ --config-path=/kubeconf.d/ "$@"
