@@ -1,0 +1,438 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "fullname" . }}
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: {{ .Release.Name | quote }}
+    heritage: {{ .Release.Service | quote }}
+data:
+  homeserver.yaml: |
+    ## Server ##
+
+    # When running as a daemon, the file to store the pid in
+    pid_file: "/var/run/matrix-synapse.pid"
+
+    # Whether to serve a web client from the HTTP/HTTPS root resource.
+    web_client: False
+
+    # The public-facing base URL for the client API (not including _matrix/...)
+    # public_baseurl: https://example.com:8448/
+
+    # Set the soft limit on the number of file descriptors synapse can use
+    # Zero is used to indicate synapse should set the soft limit to the
+    # hard limit.
+    soft_file_limit: 0
+
+    # The GC threshold parameters to pass to `gc.set_threshold`, if defined
+    # gc_thresholds: [700, 10, 10]
+
+    # A list of other Home Servers to fetch the public room directory from
+    # and include in the public room directory of this home server
+    # This is a temporary stopgap solution to populate new server with a
+    # list of rooms until there exists a good solution of a decentralized
+    # room directory.
+    # secondary_directory_servers:
+    #     - matrix.org
+    #     - vector.im
+
+    # List of ports that Synapse should listen on, their purpose and their
+    # configuration.
+    listeners:
+      # Main HTTPS listener
+      # For when matrix traffic is sent directly to synapse.
+      -
+        # The port to listen for HTTPS requests on.
+        port: 8448
+
+        # Local interface to listen on.
+        # The empty string will cause synapse to listen on all interfaces.
+        bind_address: ''
+
+        # This is a 'http' listener, allows us to specify 'resources'.
+        type: http
+
+        tls: true
+
+        # Use the X-Forwarded-For (XFF) header as the client IP and not the
+        # actual client IP.
+        x_forwarded: false
+
+        # List of HTTP resources to serve on this listener.
+        resources:
+          -
+            # List of resources to host on this listener.
+            names:
+              - client     # The client-server APIs, both v1 and v2
+              - webclient  # The bundled webclient.
+
+            # Should synapse compress HTTP responses to clients that support it?
+            # This should be disabled if running synapse behind a load balancer
+            # that can do automatic compression.
+            compress: true
+
+          - names: [federation]  # Federation APIs
+            compress: false
+
+      # Unsecure HTTP listener,
+      # For when matrix traffic passes through loadbalancer that unwraps TLS.
+      - port: 8008
+        tls: false
+        bind_address: ''
+        type: http
+
+        x_forwarded: false
+
+        resources:
+          - names: [client, webclient]
+            compress: true
+          - names: [federation]
+            compress: false
+
+      # Turn on the twisted ssh manhole service on localhost on the given
+      # port.
+      # - port: 9000
+      #   bind_address: 127.0.0.1
+      #   type: manhole
+
+    # Number of events to cache in memory.
+    event_cache_size: "10K"
+
+
+    # A yaml python logging config file
+    log_config: "/config/log.yaml"
+
+    # Stop twisted from discarding the stack traces of exceptions in
+    # deferreds by waiting a reactor tick before running a deferred's
+    # callbacks.
+    # full_twisted_stacktraces: true
+
+
+    ## Ratelimiting ##
+
+    # Number of messages a client can send per second
+    rc_messages_per_second: 0.2
+
+    # Number of message a client can send before being throttled
+    rc_message_burst_count: 10.0
+
+    # The federation window size in milliseconds
+    federation_rc_window_size: 1000
+
+    # The number of federation requests from a single server in a window
+    # before the server will delay processing the request.
+    federation_rc_sleep_limit: 10
+
+    # The duration in milliseconds to delay processing events from
+    # remote servers by if they go over the sleep limit.
+    federation_rc_sleep_delay: 500
+
+    # The maximum number of concurrent federation requests allowed
+    # from a single server
+    federation_rc_reject_limit: 50
+
+    # The number of federation requests to concurrently process from a
+    # single server
+    federation_rc_concurrent: 3
+
+
+
+    # Directory where uploaded images and attachments are stored.
+    media_store_path: "/data"
+
+    # The largest allowed upload size in bytes
+    max_upload_size: "10M"
+
+    # Maximum number of pixels that will be thumbnailed
+    max_image_pixels: "32M"
+
+    # Whether to generate new thumbnails on the fly to precisely match
+    # the resolution requested by the client. If true then whenever
+    # a new resolution is requested by the client the server will
+    # generate a new thumbnail. If false the server will pick a thumbnail
+    # from a precalculated list.
+    dynamic_thumbnails: false
+
+    # List of thumbnail to precalculate when an image is uploaded.
+    thumbnail_sizes:
+    - width: 32
+      height: 32
+      method: crop
+    - width: 96
+      height: 96
+      method: crop
+    - width: 320
+      height: 240
+      method: scale
+    - width: 640
+      height: 480
+      method: scale
+    - width: 800
+      height: 600
+      method: scale
+
+    # Is the preview URL API enabled?  If enabled, you *must* specify
+    # an explicit url_preview_ip_range_blacklist of IPs that the spider is
+    # denied from accessing.
+    url_preview_enabled: False
+
+    # List of IP address CIDR ranges that the URL preview spider is denied
+    # from accessing.  There are no defaults: you must explicitly
+    # specify a list for URL previewing to work.  You should specify any
+    # internal services in your network that you do not want synapse to try
+    # to connect to, otherwise anyone in any Matrix room could cause your
+    # synapse to issue arbitrary GET requests to your internal services,
+    # causing serious security issues.
+    #
+    # url_preview_ip_range_blacklist:
+    # - '127.0.0.0/8'
+    # - '10.0.0.0/8'
+    # - '172.16.0.0/12'
+    # - '192.168.0.0/16'
+    #
+    # List of IP address CIDR ranges that the URL preview spider is allowed
+    # to access even if they are specified in url_preview_ip_range_blacklist.
+    # This is useful for specifying exceptions to wide-ranging blacklisted
+    # target IP ranges - e.g. for enabling URL previews for a specific private
+    # website only visible in your network.
+    #
+    # url_preview_ip_range_whitelist:
+    # - '192.168.1.1'
+
+    # Optional list of URL matches that the URL preview spider is
+    # denied from accessing.  You should use url_preview_ip_range_blacklist
+    # in preference to this, otherwise someone could define a public DNS
+    # entry that points to a private IP address and circumvent the blacklist.
+    # This is more useful if you know there is an entire shape of URL that
+    # you know that will never want synapse to try to spider.
+    #
+    # Each list entry is a dictionary of url component attributes as returned
+    # by urlparse.urlsplit as applied to the absolute form of the URL.  See
+    # https://docs.python.org/2/library/urlparse.html#urlparse.urlsplit
+    # The values of the dictionary are treated as an filename match pattern
+    # applied to that component of URLs, unless they start with a ^ in which
+    # case they are treated as a regular expression match.  If all the
+    # specified component matches for a given list item succeed, the URL is
+    # blacklisted.
+    #
+    # url_preview_url_blacklist:
+    # # blacklist any URL with a username in its URI
+    # - username: '*'
+    #
+    # # blacklist all *.google.com URLs
+    # - netloc: 'google.com'
+    # - netloc: '*.google.com'
+    #
+    # # blacklist all plain HTTP URLs
+    # - scheme: 'http'
+    #
+    # # blacklist http(s)://www.acme.com/foo
+    # - netloc: 'www.acme.com'
+    #   path: '/foo'
+    #
+    # # blacklist any URL with a literal IPv4 address
+    # - netloc: '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$'
+
+    # The largest allowed URL preview spidering size in bytes
+    max_spider_size: "10M"
+
+
+
+
+    ## Captcha ##
+
+    # This Home Server's ReCAPTCHA public key.
+    recaptcha_public_key: "YOUR_PUBLIC_KEY"
+
+    # This Home Server's ReCAPTCHA private key.
+    recaptcha_private_key: "YOUR_PRIVATE_KEY"
+
+    # Enables ReCaptcha checks when registering, preventing signup
+    # unless a captcha is answered. Requires a valid ReCaptcha
+    # public/private key.
+    enable_registration_captcha: False
+
+    # A secret key used to bypass the captcha test entirely.
+    #captcha_bypass_secret: "YOUR_SECRET_HERE"
+
+    # The API endpoint to use for verifying m.login.recaptcha responses.
+    recaptcha_siteverify_api: "https://www.google.com/recaptcha/api/siteverify"
+
+
+    ## Turn ##
+
+    # The public URIs of the TURN server to give to clients
+    turn_uris: []
+
+    # The shared secret used to compute passwords for the TURN server
+    turn_shared_secret: "YOUR_SHARED_SECRET"
+
+    # How long generated TURN credentials last
+    turn_user_lifetime: "1h"
+
+
+    ## Registration ##
+
+    # Enable registration for new users.
+    enable_registration: False
+
+    # If set, allows registration by anyone who also has the shared
+    # secret, even if registration is otherwise disabled.
+    # registration_shared_secret: <PRIVATE STRING>
+
+    # Sets the expiry for the short term user creation in
+    # milliseconds. For instance the bellow duration is two weeks
+    # in milliseconds.
+    user_creation_max_duration: 1209600000
+
+    # Set the number of bcrypt rounds used to generate password hash.
+    # Larger numbers increase the work factor needed to generate the hash.
+    # The default number of rounds is 12.
+    bcrypt_rounds: 12
+
+    # Allows users to register as guests without a password/email/etc, and
+    # participate in rooms hosted on this server which have been made
+    # accessible to anonymous users.
+    allow_guest_access: False
+
+    # The list of identity servers trusted to verify third party
+    # identifiers by this server.
+    trusted_third_party_id_servers:
+        - matrix.org
+        - vector.im
+
+    ## Metrics ###
+
+    # Enable collection and rendering of performance metrics
+    enable_metrics: False
+
+    ## API Configuration ##
+
+    # A list of event types that will be included in the room_invite_state
+    room_invite_state_types:
+        - "m.room.join_rules"
+        - "m.room.canonical_alias"
+        - "m.room.avatar"
+        - "m.room.name"
+
+
+    # A list of application service config file to use
+    app_service_config_files: []
+
+
+    # macaroon_secret_key: <PRIVATE STRING>
+
+    # Used to enable access token expiration.
+    expire_access_token: False
+
+    ## Signing Keys ##
+
+    # Path to the signing key to sign messages with
+    signing_key_path: "/etc/matrix-synapse/homeserver.signing.key"
+
+    # The keys that the server used to sign messages with but won't use
+    # to sign new messages. E.g. it has lost its private key
+    old_signing_keys: {}
+    #  "ed25519:auto":
+    #    # Base64 encoded public key
+    #    key: "The public part of your old signing key."
+    #    # Millisecond POSIX timestamp when the key expired.
+    #    expired_ts: 123456789123
+
+    # How long key response published by this server is valid for.
+    # Used to set the valid_until_ts in /key/v2 APIs.
+    # Determines how quickly servers will query to check which keys
+    # are still valid.
+    key_refresh_interval: "1d" # 1 Day.
+
+    # The trusted servers to download signing keys from.
+    perspectives:
+      servers:
+        "matrix.org":
+          verify_keys:
+            "ed25519:auto":
+              key: "Noi6WqcDj0QmPxCNQqgezwTlBKrfqehY1u2FyWP9uYw"
+
+
+
+    # Enable SAML2 for registration and login. Uses pysaml2
+    # config_path:      Path to the sp_conf.py configuration file
+    # idp_redirect_url: Identity provider URL which will redirect
+    #                   the user back to /login/saml2 with proper info.
+    # See pysaml2 docs for format of config.
+    #saml2_config:
+    #   enabled: true
+    #   config_path: "/home/erikj/git/synapse/sp_conf.py"
+    #   idp_redirect_url: "http://test/idp"
+
+
+
+    # Enable CAS for registration and login.
+    #cas_config:
+    #   enabled: true
+    #   server_url: "https://cas-server.com"
+    #   service_url: "https://homesever.domain.com:8448"
+    #   #required_attributes:
+    #   #    name: value
+
+
+    # The JWT needs to contain a globally unique "sub" (subject) claim.
+    #
+    # jwt_config:
+    #    enabled: true
+    #    secret: "a secret"
+    #    algorithm: "HS256"
+
+
+    # ldap_config:
+    #   enabled: true
+    #   server: "ldap://localhost"
+    #   port: 389
+    #   tls: false
+    #   search_base: "ou=Users,dc=example,dc=com"
+    #   search_property: "cn"
+    #   email_property: "email"
+    #   full_name_property: "givenName"
+
+
+
+    # Enable password for login.
+    password_config:
+       enabled: true
+
+
+
+    # Enable sending emails for notification events
+    #email:
+    #   enable_notifs: false
+    #   smtp_host: "localhost"
+    #   smtp_port: 25
+    #   notif_from: "Your Friendly %(app)s Home Server <noreply@example.com>"
+    #   app_name: Matrix
+    #   template_dir: res/templates
+    #   notif_template_html: notif_mail.html
+    #   notif_template_text: notif_mail.txt
+    #   notif_for_new_users: True
+  log.yaml: |
+    formatters:
+      precise:
+       format: '%(asctime)s - %(name)s - %(lineno)d - %(levelname)s - %(request)s- %(message)s'
+    filters:
+      context:
+        (): synapse.util.logcontext.LoggingContextFilter
+        request: ""
+    handlers:
+      console:
+        class: logging.StreamHandler
+        formatter: precise
+        filters: [context]
+        level: INFO
+    loggers:
+        synapse:
+            level: INFO
+        synapse.storage.SQL:
+            level: INFO
+    root:
+        level: INFO
+        handlers: [console]

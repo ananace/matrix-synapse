@@ -93,15 +93,13 @@ listeners:
     copmress: false
 EOF
 
-echo 'media_store_path: "/var/lib/matrix-synapse/data"' > /etc/matrix-synapse/conf.d/media.yaml
+echo 'media_store_path: "/data"' > /etc/matrix-synapse/conf.d/data.yaml
 
 cat <<EOF > /etc/matrix-synapse/conf.d/tls.yaml
-tls_certificate_path: "/var/lib/matrix-synapse/tls/tls.crt"
-tls_private_key_path: "/var/lib/matrix-synapse/tls/tls.key"
-tls_dh_params_path:   "/var/lib/matrix-synapse/tls_dh/dhparams.pam"
-signing_key_path:     "/var/lib/matrix-synapse/signing/signing.key"
+tls_certificate_path: "/secret/tls.crt"
+tls_private_key_path: "/secret/tls.key"
+tls_dh_params_path:   "/secret/dhparams.pam"
+signing_key_path:     "/secret/signing.key"
 EOF
 
-touch /var/log/matrix-synapse/homserver.log
-(tail -F /var/log/matrix-synapse/homeserver.log &)
-python -m synapse.app.homeserver --config-path=/etc/matrix-synapse/homeserver.yaml --config-path=/etc/matrix-synapse/conf.d/ --config-path=/kubeconf.d/ "$@"
+python -m synapse.app.homeserver --no-redirect-stdio --config-path=/config/ --config-path=/etc/matrix-synapse/conf.d/ "$@"

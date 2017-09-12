@@ -1,0 +1,40 @@
+synapse:
+  ## The container image to use
+  image: ansiwen/matrix-synapse
+  ## The tag to grab
+  tag: latest
+
+  ## Specify an imagePullPolicy, defaults to Always
+  # pullPolicy:
+  
+  ## Use an ingress resource to expose the HS?
+  ingress: false
+
+  ## Set a SYNAPSE_CACHE_FACTOR value
+  # cache_factor:
+
+
+postgres:
+  # Use an internal or external Postgres setup?
+  internal: true
+
+  # External Postgres node to use if not using the pod
+  external:
+    host: 10.0.0.1
+    port: 5432
+
+  postgresUser: synapse
+  # postgresPassword: 
+  # postgresDatabase: 
+
+  # Persistance config for the Postgres pod
+  persistence:
+    enabled: true
+
+    # existingClaim:
+
+    # storageClass: '-'
+    accessMode: ReadWriteOnce
+    size: 10Gi
+    subPath: 'postgresql-db'
+

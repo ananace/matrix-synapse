@@ -1,0 +1,53 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: {{ template "fullname" . }}
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+spec:
+  template:
+    metadata:
+      labels:
+        app: {{ template "fullname" . }}
+    spec:
+      {{- if .Values.affinity }}
+      affinity:
+{{ toYaml .Values.affinity | indent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ template "fullname" . }}
+          image: "{{ .Values.image }}:{{ .Values.tag }}"
+          imagePullPolicy: {{ default "Always" .Values.pullPolicy | quote }}
+          env:
+            {{- if .Values.synapse.cache_factor }}
+            - name: SYNAPSE_CACHE_FACTOR
+              value: {{ .Values.synapse.cache_factor | quote }}
+            {{- end }}
+          ports:
+            - name: http
+              containerPort: 8008
+            - name: https
+              containerPort: 8448
+          livenessProbe:
+            httpGet:
+              path: /_matrix/client/versions
+              port: http
+            initialDelaySeconds: 15
+            timeoutSeconds: 3
+            periodSeconds: 5
+          resources:
+{{ toYaml .Values.resources | indent 10 }}
+          volumeMounts:
+            - name: synapse-data
+              mountPath: /data
+            - name: synapse-config
+              mountPath: /config
+      volumes:
+        - name: synapse-data
+{{ toYaml .Values.synapse.data | indent 10 }}
+        - name: synapse-config
+          configMap:
+
