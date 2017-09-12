@@ -61,6 +61,7 @@ spec:
       containers:
         - name: matrix-synapse
           image: ananace/matrix-synapse
+          imagePullPolicy: Always
           volumeMounts:
             - name: matrix-synapse-data
               mountPath: /var/lib/matrix-synapse/data
@@ -70,9 +71,9 @@ spec:
               mountPath: /var/lib/matrix-synapse/tls_dh
           env:
             - name: SYNAPSE_CACHE_FACTOR
-              value: '0.1'
+              value: '0.5'
             - name: MATRIX_SERVERNAME
-              value: kittenface.studio
+              value: matrix.example.com
             - name: MATRIX_DATABASE
               value: postgres
             - name: MATRIX_DB_USER
@@ -82,13 +83,13 @@ spec:
             - name: MATRIX_DB_DATABASE
               value: synapse
             - name: MATRIX_DB_HOST
-              value: stolon-proxy.default.svc
+              value: postgres.example.com
             - name: MATRIX_DB_PORT
               value: '5432'
             - name: MATRIX_LDAPURI
-              value: 192.168.0.9
+              value: ldap.example.com
             - name: MATRIX_LDAPBASE
-              value: ou=Users,dc=introvert,dc=software
+              value: ou=Users,dc=example,dc=com
             - name: MATRIX_SIGNKEY
               value: 'ed25519 a_bdji EXAMPLEKEY'
             - name: MATRIX_LDAPUIDATTR
@@ -98,15 +99,19 @@ spec:
             - name: MATRIX_LDAPNAMEATTR
               value: gecos
           resources:
+            request:
+              memory: 250Mi
+              cpu: 250m
             limits:
-              memory: 6Gi
-          readinessProbe:
+              memory: 4Gi
+              cpu: 1
+          livenessProbe:
+            failureThreshold: 5
             httpGet:
               path: /_matrix/client/versions
               port: 8008
               scheme: HTTP
-          livenessProbe:
-            httpGet:
-              path: /_matrix/client/r0/publicRooms
-              port: 8008
-              scheme: HTTP
+            initialDelaySeconds: 30
+            periodSeconds: 20
+            successThreshold: 1
+            timeoutSeconds: 5
