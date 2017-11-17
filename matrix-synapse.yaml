@@ -33,16 +33,9 @@ type: kubernetes.io/tls
 kind: Secret
 apiVersion: v1
 metadata:
-  name: matrix-synapse-tls-dh
+  name: matrix-synapse-keys
 data:
   dhparam.pam:
-type: Opaque
----
-kind: Secret
-apiVersion: v1
-metadata:
-  name: matrix-synapse-signing
-data:
   signing.key:
 type: Opaque
 ---
@@ -67,27 +60,25 @@ spec:
         - name: matrix-synapse-tls
           secret:
             secretName: matrix-synapse-tls
-        - name: matrix-synapse-tls-dh
+        - name: matrix-synapse-keys
           secret:
-            secretName: matrix-synapse-tls-dh
-        - name: matrix-synapse-signing
-          secret:
-            secretName: matrix-synapse-signing
+            secretName: matrix-synapse-keys
+        - name: matrix-synapse-config
+          configMap:
+            name: matrix-synapse-config
       containers:
         - name: matrix-synapse
           image: ananace/matrix-synapse:0.25.1-lite
           imagePullPolicy: Always
           volumeMounts:
             - name: matrix-synapse-data
-              mountPath: /data
+              mountPath: /synapse/data
             - name: matrix-synapse-config
-              mountPath: /config/extra
+              mountPath: /synapse/config
+            - name: matrix-synapse-keys
+              mountPath: /synapse/keys
             - name: matrix-synapse-tls
-              mountPath: /config/tls
-            - name: matrix-synapse-tls-dh
-              mountPath: /config/tls_dh
-            - name: matrix-synapse-signin
-              mountPath: /config/signing
+              mountPath: /synapse/tls
           env:
             - name: SYNAPSE_CACHE_FACTOR
               value: '0.5'

@@ -13,13 +13,13 @@ RUN set -eux \
       py2-crypto py2-dateutil py2-service_identity \
     && pip install https://github.com/matrix-org/synapse/archive/v$SYNAPSE_VER.tar.gz \
     && rm -rf /root/.cache \
-    && mkdir -p /synapse/config /synapse/data /synapse/keys \
+    && mkdir -p /synapse/config /synapse/data /synapse/keys /synapse/tls \
     && addgroup -g 666 -S synapse \
     && adduser -u 666 -S -G synapse -h /synapse/config synapse
 
 ADD log.yaml /synapse
 ADD matrix-synapse.sh /matrix-synapse
-VOLUME /synapse/config /synapse/data /synapse/keys
+VOLUME /synapse/config /synapse/data /synapse/keys /synapse/tls
 
 RUN chown -R synapse:synapse /synapse
 

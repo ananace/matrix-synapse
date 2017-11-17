@@ -32,8 +32,8 @@ case "${1:-start}" in
     fixup() {
       rm /synapse/config/*.log.config
       sed -i /synapse/config/homeserver.yaml \
-      	-e 's!^tls_certificate_path: "/synapse/config!tls_certificate_path: "/synapse/keys!' \
-      	-e 's!^tls_private_key_path: "/synapse/config!tls_private_key_path: "/synapse/keys!' \
+      	-e 's!^tls_certificate_path: "/synapse/config!tls_certificate_path: "/synapse/tls!' \
+      	-e 's!^tls_private_key_path: "/synapse/config!tls_private_key_path: "/synapse/tls!' \
       	-e 's!^tls_dh_params_path: "/synapse/config!tls_dh_params_path: "/synapse/keys!' \
       	-e 's!^signing_key_path: "/synapse/config!signing_key_path: "/synapse/keys!' \
       	-e 's!^log_config: .*!log_config: "/synapse/config/log.yaml"!' \
