@@ -68,7 +68,11 @@ if [ ! -e /synapse/config/log.yaml ]; then
   cp /synapse/log.yaml /synapse/config
 fi
 
-chown -R synapse:synapse /synapse
+(
+  set +eu
+  chown -R synapse:synapse /synapse
+) >/dev/null 2>&1
+
 echo "> python -m $APP -c /synapse/config/homeserver.yaml $ARGS $*"
 su-exec synapse \
   python -B -m "$APP" -c /synapse/config/homeserver.yaml $ARGS "$@"
