@@ -13,6 +13,10 @@ spec:
       protocol: TCP
       port: 8448
       targetPort: 8448
+    - name: replication
+      protocol: TCP
+      port: 9092
+      targetPort: 9092
   selector:
     app: matrix-synapse
   type: ClusterIP
@@ -32,6 +36,14 @@ metadata:
   name: matrix-synapse-tls-dh
 data:
   dhparam.pam:
+type: Opaque
+---
+kind: Secret
+apiVersion: v1
+metadata:
+  name: matrix-synapse-signing
+data:
+  signing.key:
 type: Opaque
 ---
 kind: Deployment
@@ -58,46 +70,27 @@ spec:
         - name: matrix-synapse-tls-dh
           secret:
             secretName: matrix-synapse-tls-dh
+        - name: matrix-synapse-signing
+          secret:
+            secretName: matrix-synapse-signing
       containers:
         - name: matrix-synapse
-          image: ananace/matrix-synapse
+          image: ananace/matrix-synapse:0.25.1-lite
           imagePullPolicy: Always
           volumeMounts:
             - name: matrix-synapse-data
-              mountPath: /var/lib/matrix-synapse/data
+              mountPath: /data
+            - name: matrix-synapse-config
+              mountPath: /config/extra
             - name: matrix-synapse-tls
-              mountPath: /var/lib/matrix-synapse/tls
+              mountPath: /config/tls
             - name: matrix-synapse-tls-dh
-              mountPath: /var/lib/matrix-synapse/tls_dh
+              mountPath: /config/tls_dh
+            - name: matrix-synapse-signin
+              mountPath: /config/signing
           env:
             - name: SYNAPSE_CACHE_FACTOR
               value: '0.5'
-            - name: MATRIX_SERVERNAME
-              value: matrix.example.com
-            - name: MATRIX_DATABASE
-              value: postgres
-            - name: MATRIX_DB_USER
-              value: synapse
-            - name: MATRIX_DB_PASSWORD
-              value: synapse
-            - name: MATRIX_DB_DATABASE
-              value: synapse
-            - name: MATRIX_DB_HOST
-              value: postgres.example.com
-            - name: MATRIX_DB_PORT
-              value: '5432'
-            - name: MATRIX_LDAPURI
-              value: ldap.example.com
-            - name: MATRIX_LDAPBASE
-              value: ou=Users,dc=example,dc=com
-            - name: MATRIX_SIGNKEY
-              value: 'ed25519 a_bdji EXAMPLEKEY'
-            - name: MATRIX_LDAPUIDATTR
-              value: uid
-            - name: MATRIX_LDAPMAILATTR
-              value: mail
-            - name: MATRIX_LDAPNAMEATTR
-              value: gecos
           resources:
             request:
               memory: 250Mi
