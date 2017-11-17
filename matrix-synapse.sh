@@ -32,10 +32,10 @@ case "${1:-start}" in
     fixup() {
       rm /synapse/config/*.log.config
       sed -i /synapse/config/homeserver.yaml \
-      	-e 's!^tls_certificate_path: "/synapse/config!tls_certificate_path: "/synapse/tls!' \
-      	-e 's!^tls_private_key_path: "/synapse/config!tls_private_key_path: "/synapse/tls!' \
-      	-e 's!^tls_dh_params_path: "/synapse/config!tls_dh_params_path: "/synapse/keys!' \
-      	-e 's!^signing_key_path: "/synapse/config!signing_key_path: "/synapse/keys!' \
+      	-e 's!^tls_certificate_path: .*!tls_certificate_path: "/synapse/tls/tls.crt"!' \
+      	-e 's!^tls_private_key_path: .*!tls_private_key_path: "/synapse/tls/tls.key"!' \
+      	-e 's!^tls_dh_params_path: .*!tls_dh_params_path: "/synapse/keys/dhparams.pem"!' \
+      	-e 's!^signing_key_path: .*!signing_key_path: "/synapse/keys/signing.key"!' \
       	-e 's!^log_config: .*!log_config: "/synapse/config/log.yaml"!' \
       	-e 's!^media_store_path: .*!media_store_path: "/synapse/data/media"!' \
       	-e 's!^uploads_path: .*!uploads_path: "/synapse/data/uploads"!' \
