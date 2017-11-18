@@ -1,21 +1,26 @@
-FROM alpine:3.6
+FROM centos:7
 
 MAINTAINER Alexander Olofsson <ace@haxalot.com>
 
 ARG SYNAPSE_VER=0.25.1
 
 RUN set -eux \
-    && apk add --no-cache \
-      build-base ca-certificates python2-dev py2-pip su-exec \
-      py2-psycopg2 py2-msgpack py2-psutil py2-openssl py2-yaml py-twisted \
-      py2-netaddr py2-cffi py2-asn1 py2-asn1-modules py2-cryptography \
-      py2-pillow py2-decorator py2-jinja2 py2-requests py2-simplejson py2-tz \
-      py2-crypto py2-dateutil py2-service_identity \
+    && export LIBRARY_PATH=/lib:/usr/lib \
+    && yum install -y epel-release \
+    && yum upgrade -y \
+    && yum install -y \
+        git gcc make python-pip python-devel libffi-devel openssl-devel mailcap \
+    && pip install -U pip \
+    && pip install -U setuptools psycopg2 \
     && pip install https://github.com/matrix-org/synapse/archive/v$SYNAPSE_VER.tar.gz \
-    && rm -rf /root/.cache \
     && mkdir -p /synapse/config /synapse/data /synapse/keys /synapse/tls \
-    && addgroup -g 666 -S synapse \
-    && adduser -u 666 -S -G synapse -h /synapse/config synapse
+    && groupadd -r -g 666 synapse \
+    && useradd -r -u 666 -g synapse -d /synapse/config -M synapse \
+    && yum clean all \
+    && yum autoremove -y \
+        git gcc make python-devel openssl-devel \
+    && yum clean -y all \
+    && rm -rf /var/cache/yum/* /root/.cache/pip
 
 ADD log.yaml /synapse
 ADD matrix-synapse.sh /matrix-synapse

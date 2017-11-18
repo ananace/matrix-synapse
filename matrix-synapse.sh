@@ -74,5 +74,5 @@ fi
 ) >/dev/null 2>&1
 
 echo "> python -m $APP -c /synapse/config/homeserver.yaml $ARGS $*"
-su-exec synapse \
-  python -B -m "$APP" -c /synapse/config/homeserver.yaml $ARGS "$@"
+su synapse -c \
+  "python -B -m $APP -c /synapse/config/homeserver.yaml $ARGS $*"
