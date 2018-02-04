@@ -39,6 +39,18 @@ data:
   signing.key:
 type: Opaque
 ---
+apiVersion: v1
+data:
+  homeserver.yaml: |
+    ## To fill this in, use docker to generate a homeserver.yaml file
+    #
+    # ...
+    #
+kind: ConfigMap
+metadata:
+  name: matrix-synapse
+  namespace: matrix
+---
 kind: Deployment
 apiVersion: extensions/v1beta1
 metadata:
@@ -68,8 +80,7 @@ spec:
             name: matrix-synapse-config
       containers:
         - name: matrix-synapse
-          image: ananace/matrix-synapse:0.25.1-lite
-          imagePullPolicy: Always
+          image: ananace/matrix-synapse:0.25.1
           volumeMounts:
             - name: matrix-synapse-data
               mountPath: /synapse/data

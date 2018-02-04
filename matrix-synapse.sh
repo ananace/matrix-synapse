@@ -26,11 +26,17 @@ case "${1:-start}" in
 
   config)
     shift
-    ARGS="--generate-config --report-stats ${REPORT_STATS:-yes} -H ${SERVER_NAME}"
+    ARGS="--generate-config --keys-directory /synapse/keys --report-stats ${REPORT_STATS:-yes} -H ${SERVER_NAME}"
     GEN="true"
 
     fixup() {
-      rm /synapse/config/*.log.config
+      rm -rf /synapse/config/*.log.config
+      
+      mv /synapse/config/*.signing.key /synapse/keys/signing.key
+      mv /synapse/config/*.tls.dh /synapse/keys/dhparams.pem
+      mv /synapse/config/*.tls.crt /synapse/tls/tls.crt
+      mv /synapse/config/*.tls.key /synapse/tls/tls.key
+
       sed -i /synapse/config/homeserver.yaml \
       	-e 's!^tls_certificate_path: .*!tls_certificate_path: "/synapse/tls/tls.crt"!' \
       	-e 's!^tls_private_key_path: .*!tls_private_key_path: "/synapse/tls/tls.key"!' \
