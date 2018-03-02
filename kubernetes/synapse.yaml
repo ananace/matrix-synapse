@@ -80,7 +80,7 @@ spec:
             name: matrix-synapse-config
       containers:
         - name: matrix-synapse
-          image: ananace/matrix-synapse:0.25.1
+          image: ananace/matrix-synapse:0.26.0
           volumeMounts:
             - name: matrix-synapse-data
               mountPath: /synapse/data

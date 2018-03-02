@@ -1,0 +1,91 @@
+# Example ingress rules are in the ingress.yaml file
+---
+apiVersion: v1
+data:
+  federation-reader.worker: |
+    worker_app: synapse.app.federation_reader
+
+    # The replication listener on the synapse to talk to.
+    worker_replication_host: matrix-synapse
+    worker_replication_port: 9092
+
+    worker_listeners:
+    - type: http
+      port: 8083
+      resources:
+        - names:
+          - federation
+
+    worker_log_config: /synapse/config/log.yaml
+  homeserver.yaml: |
+  # ...
+kind: ConfigMap
+metadata:
+  name: matrix-synapse
+  namespace: matrix
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: federation-reader
+  namespace: matrix
+spec:
+  ports:
+  - name: http
+    port: 8083
+    protocol: TCP
+    targetPort: 8083
+  selector:
+    app: matrix-synapse-worker
+    worker: federation-reader
+  type: ClusterIP
+
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    app: matrix-synapse-worker
+    worker: federation-reader
+  name: federation-reader
+  namespace: matrix
+spec:
+  selector:
+    matchLabels:
+      app: matrix-synapse-worker
+      worker: federation-reader
+  template:
+    metadata:
+      labels:
+        app: matrix-synapse-worker
+        worker: federation-reader
+    spec:
+      containers:
+      - args:
+        - synapse.app.federation_reader
+        - -c
+        - /synapse/config/federation-reader.worker
+        image: ananace/matrix-synapse:0.26.0
+        name: worker
+        resources:
+          limits:
+            memory: 512Mi
+        volumeMounts:
+        - mountPath: /synapse/tls
+          name: matrix-synapse-tls
+        - mountPath: /synapse/keys
+          name: matrix-synapse-tls-dh
+        - mountPath: /synapse/config
+          name: matrix-synapse-config
+      restartPolicy: Always
+      volumes:
+      - name: matrix-synapse-tls
+        secret:
+          secretName: matrix-synapse-tls
+      - name: matrix-synapse-tls-dh
+        secret:
+          secretName: matrix-synapse-tls-dh
+      - configMap:
+          name: matrix-synapse
+        name: matrix-synapse-config

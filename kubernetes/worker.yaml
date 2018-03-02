@@ -1,6 +1,21 @@
 ---
 apiVersion: v1
 data:
+  federation-sender.worker: |
+    worker_app: synapse.app.federation_sender
+
+    # The replication listener on the synapse to talk to.
+    worker_replication_host: matrix-synapse
+    worker_replication_port: 9092
+
+    worker_listeners:
+    - type: http
+      port: 8083
+      resources:
+        - names:
+          - client
+
+    worker_log_config: /synapse/config/log.yaml
   synchrotron.worker: |
     # More information about the content of this file can be found at
     # https://github.com/matrix-org/synapse/blob/master/docs/workers.rst
@@ -20,9 +35,17 @@ data:
     worker_log_config: /synapse/config/log.yaml
   homeserver.yaml: |
     ## To fill this in, use docker to generate a homeserver.yaml file
-    #
     # ...
     #
+    # Don't send federation from main proc
+    send_federation: False
+    # ...
+    listeners:
+    # ...
+    - port: 9092
+      bind_addresses: ['0.0.0.0']
+      type: replication
+    # ...
 kind: ConfigMap
 metadata:
   name: matrix-synapse
@@ -43,6 +66,54 @@ spec:
     app: matrix-synapse-worker
     worker: synchrotron
   type: ClusterIP
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    app: matrix-synapse-worker
+    worker: federation-sender
+  name: federation-sender
+  namespace: matrix
+spec:
+  selector:
+    matchLabels:
+      app: matrix-synapse-worker
+      worker: federation-sender
+  template:
+    metadata:
+      labels:
+        app: matrix-synapse-worker
+        worker: federation-sender
+    spec:
+      containers:
+      - args:
+        - synapse.app.federation_sender
+        - -c
+        - /synapse/config/federation-sender.worker
+        image: ananace/matrix-synapse:0.26.0
+        name: worker
+        resources:
+          limits:
+            memory: 512Mi
+        volumeMounts:
+        - mountPath: /synapse/tls
+          name: matrix-synapse-tls
+        - mountPath: /synapse/keys
+          name: matrix-synapse-tls-dh
+        - mountPath: /synapse/config
+          name: matrix-synapse-config
+      restartPolicy: Always
+      volumes:
+      - name: matrix-synapse-tls
+        secret:
+          secretName: matrix-synapse-tls
+      - name: matrix-synapse-tls-dh
+        secret:
+          secretName: matrix-synapse-tls-dh
+      - configMap:
+          name: matrix-synapse
+        name: matrix-synapse-config
 ---
 apiVersion: extensions/v1beta1
 kind: Deployment

@@ -1,0 +1,48 @@
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    ingress.kubernetes.io/ssl-passthrough: "true"
+    kubernetes.io/tls-acme: "true"
+  name: matrix-synapse
+spec:
+  rules:
+  - host: kittenface.studio
+    http:
+      paths:
+      ## Sadly due to kubernetes/ingress-nginx#1260 regexps can't be done in a suitable manner,
+      #  so duplicating paths is currently the only way to set up rules like these with the nginx ingress.
+      - backend:
+          serviceName: federation-reader
+          servicePort: 8083
+        path: /_matrix/federation/v1/event/
+      - backend:
+          serviceName: federation-reader
+          servicePort: 8083
+        path: /_matrix/federation/v1/state/
+      - backend:
+          serviceName: federation-reader
+          servicePort: 8083
+        path: /_matrix/federation/v1/state_ids/
+      - backend:
+          serviceName: federation-reader
+          servicePort: 8083
+        path: /_matrix/federation/v1/backfill/
+      - backend:
+          serviceName: federation-reader
+          servicePort: 8083
+        path: /_matrix/federation/v1/get_missing_events/
+      - backend:
+          serviceName: federation-reader
+          servicePort: 8083
+        path: /_matrix/federation/v1/publicRooms/
+
+      - backend: # Fallback path
+          serviceName: matrix-synapse
+          servicePort: 8008
+        path: /_matrix/
+  tls:
+  - hosts:
+    - kittenface.studio
+    secretName: matrix-synapse-tls
