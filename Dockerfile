@@ -2,7 +2,7 @@ FROM centos:7
 
 MAINTAINER Alexander Olofsson <ace@haxalot.com>
 
-ARG SYNAPSE_VER=0.27.3
+ARG SYNAPSE_VER=0.27.4
 
 RUN set -eux \
     && export LIBRARY_PATH=/lib:/usr/lib \
