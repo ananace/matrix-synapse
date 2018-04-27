@@ -76,8 +76,8 @@ fi
 
 (
   set +eu
-  chown -R synapse:synapse /synapse
-) >/dev/null 2>&1
+  chown -R synapse:synapse /synapse/data
+)
 
 echo "> python -m $APP -c /synapse/config/homeserver.yaml $ARGS $*"
 su synapse -c \
