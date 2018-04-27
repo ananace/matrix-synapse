@@ -7,7 +7,7 @@ GEN=""
 case "${1:-start}" in
   # HS
   start|serve|synapse.app.homeserver)
-    shift
+    [ $# -gt 0 ] && shift
     ARGS="--config-path=/synapse/config"
     ;;
 
