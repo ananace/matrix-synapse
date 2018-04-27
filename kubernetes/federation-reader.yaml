@@ -6,7 +6,7 @@ data:
     worker_app: synapse.app.federation_reader
 
     # The replication listener on the synapse to talk to.
-    worker_replication_host: matrix-synapse
+    worker_replication_host: matrix-synapse-replication
     worker_replication_port: 9092
 
     worker_listeners:
@@ -66,7 +66,7 @@ spec:
         - synapse.app.federation_reader
         - -c
         - /synapse/config/federation-reader.worker
-        image: ananace/matrix-synapse:0.26.0
+        image: ananace/matrix-synapse:0.28.0
         name: worker
         resources:
           limits:

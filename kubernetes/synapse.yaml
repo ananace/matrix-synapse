@@ -2,6 +2,20 @@
 kind: Service
 apiVersion: v1
 metadata:
+  name: matrix-synapse-replication
+spec:
+  ports:
+    - name: replication
+      protocol: TCP
+      port: 9092
+      targetPort: 9092
+  selector:
+    app: matrix-synapse
+  type: ClusterIP
+---
+kind: Service
+apiVersion: v1
+metadata:
   name: matrix-synapse
 spec:
   ports:
@@ -80,7 +94,7 @@ spec:
             name: matrix-synapse-config
       containers:
         - name: matrix-synapse
-          image: ananace/matrix-synapse:0.26.0
+          image: ananace/matrix-synapse:0.28.0
           volumeMounts:
             - name: matrix-synapse-data
               mountPath: /synapse/data
@@ -92,7 +106,7 @@ spec:
               mountPath: /synapse/tls
           env:
             - name: SYNAPSE_CACHE_FACTOR
-              value: '0.5'
+              value: '0.01'
           resources:
             request:
               memory: 250Mi
