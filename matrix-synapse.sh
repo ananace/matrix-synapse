@@ -30,12 +30,15 @@ case "${1:-start}" in
     GEN="true"
 
     fixup() {
+      set +eu
       rm -rf /synapse/config/*.log.config
       
-      mv /synapse/config/*.signing.key /synapse/keys/signing.key
-      mv /synapse/config/*.tls.dh /synapse/keys/dhparams.pem
-      mv /synapse/config/*.tls.crt /synapse/tls/tls.crt
-      mv /synapse/config/*.tls.key /synapse/tls/tls.key
+      (
+      	mv /synapse/config/*.signing.key /synapse/keys/signing.key
+      	mv /synapse/config/*.tls.dh /synapse/keys/dhparams.pem
+      	mv /synapse/config/*.tls.crt /synapse/tls/tls.crt
+      	mv /synapse/config/*.tls.key /synapse/tls/tls.key
+      ) &> /dev/null
 
       sed -i /synapse/config/homeserver.yaml \
       	-e 's!^tls_certificate_path: .*!tls_certificate_path: "/synapse/tls/tls.crt"!' \
@@ -47,7 +50,7 @@ case "${1:-start}" in
       	-e 's!^uploads_path: .*!uploads_path: "/synapse/data/uploads"!' \
       	-e 's!^web_client: True!web_client: False!'
 
-      echo "Make sure to look throught the generated homeserver yaml, check that everything looks correct before launching your Synapse."
+      echo "Make sure to look through the generated homeserver yaml, check that everything looks correct before launching your Synapse."
       echo "If you need to generate keys, you can do so with the \`docker run ... ananace/matrix-synapse ... keys\` command."
     }
     trap fixup EXIT
@@ -76,9 +79,9 @@ fi
 
 (
   set +eu
-  chown -R synapse:synapse /synapse/data
-)
+  chown -R synapse:synapse /synapse/config /synapse/data /synapse/keys /synapse/tls || true
+) &> /dev/null
 
 echo "> python -m $APP -c /synapse/config/homeserver.yaml $ARGS $*"
-su synapse -c \
+su synapse -s /bin/sh -c \
   "python -B -m $APP -c /synapse/config/homeserver.yaml $ARGS $*"
