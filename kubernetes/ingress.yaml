@@ -11,6 +11,20 @@ spec:
   - host: kittenface.studio
     http:
       paths:
+      ## mxisd support for directory, authentication, and identity
+      - backend:
+          serviceName: mxisd
+          servicePort: 8090
+        path: /_matrix/client/r0/user_directory
+      - backend:
+          serviceName: mxisd
+          servicePort: 8090
+        path: /_matrix/client/r0/login
+      - backend:
+          serviceName: mxisd
+          servicePort: 8090
+        path: /_matrix/identity
+
       ## Sadly due to kubernetes/ingress-nginx#1260 regexps can't be done in a suitable manner,
       #  so duplicating paths is currently the only way to set up rules like these with the nginx ingress.
       - backend:
@@ -38,10 +52,15 @@ spec:
           servicePort: 8083
         path: /_matrix/federation/v1/publicRooms/
 
-      - backend: # Fallback path
+      - backend: # Main synapse entry
           serviceName: matrix-synapse
           servicePort: 8008
         path: /_matrix/
+
+      - backend:
+          serviceName: riot
+          servicePort: 80
+        path: /
   tls:
   - hosts:
     - kittenface.studio
