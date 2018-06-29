@@ -1,0 +1,109 @@
+## Your HS configuration entry for turn uris should look like;
+#
+# turn_uris: [ 'turn:turn.example.com:3487?transport=udp' ]
+#
+# Kubernetes currently doesn't support both TCP and UDP, so if you want both
+# you need to spin up a second LoadBalancer service for that, which can be
+# costly depending on your host
+---
+apiVersion: v1
+data:
+  turnserver.conf: |
+    no-tcp-relay
+
+    denied-peer-ip=10.0.0.0-10.255.255.255
+    denied-peer-ip=192.168.0.0-192.168.255.255
+    denied-peer-ip=172.16.0.0-172.31.255.255
+
+    allowed-peer-ip=$INTERNAL_IP
+
+    user-quota=12
+    total-quota=1200
+kind: ConfigMap
+metadata:
+  labels:
+    app: coturn
+  name: coturn-config
+  namespace: matrix
+---
+apiVersion: v1
+data:
+  # Replace this with your own secret, `pwgen -s 64 1 | base64 -w0` helps
+  auth-secret: U2pKbFNwRjU4d016TW9FM0piVzFxZUFXVTk1Nzhta0JlbzgxSGxwMk9jNFpsbnRZVVI0MXR4VkJpcVJ2a1I1RQo=
+kind: Secret
+metadata:
+  labels:
+    app: coturn
+  name: coturn-secret
+  namespace: matrix
+type: Opaque
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: coturn
+  name: coturn
+  namespace: matrix
+spec:
+  externalTrafficPolicy: Cluster
+  ports:
+  # You can't currently have both UDP and TCP in the same LoadBalancer on K8s
+  - name: udp-port
+    port: 3487
+    protocol: UDP
+    targetPort: 3487
+  selector:
+    app: coturn
+  type: LoadBalancer
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    app: coturn
+  name: coturn
+  namespace: matrix
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: coturn
+  template:
+    metadata:
+      labels:
+        app: coturn
+    spec:
+      containers:
+      - env:
+        - name: INTERNAL_IP
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.hostIP
+        - name: EXTERNAL_IP
+          value: 1.2.3.4  # XXX: Replace this with your service IP
+        - name: AUTH_SECRET
+          valueFrom:
+            secretKeyRef:
+              key: auth-secret
+              name: coturn-secret
+        - name: PORT
+          value: "3487"
+        - name: REALM
+          value: turn.example.com # Use the same realm as the hostname in the turn_uri
+        image: ananace/coturn:4.5.0.6-r3
+        name: coturn
+        readinessProbe:
+          tcpSocket:
+            port: 9090
+        volumeMounts:
+        - mountPath: /etc/coturn/turnserver.conf
+          name: coturn-config
+          subPath: turnserver.conf
+      restartPolicy: Always
+      volumes:
+      - configMap:
+          defaultMode: 420
+          name: coturn-config
+        name: coturn-config
