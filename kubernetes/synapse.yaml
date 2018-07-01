@@ -94,7 +94,13 @@ spec:
             name: matrix-synapse-config
       containers:
         - name: matrix-synapse
-          image: ananace/matrix-synapse:0.28.0
+          command: # As an example of how to add rest_auth to the container without requiring a separate image
+          - sh
+          - -c
+          - |
+            wget https://github.com/kamax-io/matrix-synapse-rest-auth/raw/master/rest_auth_provider.py -O /usr/local/lib/python2.7/site-packages/rest_auth_provider.py
+            /matrix-synapse
+          image: ananace/matrix-synapse:0.31.2
           volumeMounts:
             - name: matrix-synapse-data
               mountPath: /synapse/data/homeserver.yaml
