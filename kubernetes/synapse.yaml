@@ -97,7 +97,8 @@ spec:
           image: ananace/matrix-synapse:0.28.0
           volumeMounts:
             - name: matrix-synapse-data
-              mountPath: /synapse/data
+              mountPath: /synapse/data/homeserver.yaml
+              subPath: homeserver.yaml
             - name: matrix-synapse-config
               mountPath: /synapse/config
             - name: matrix-synapse-keys
