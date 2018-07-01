@@ -74,7 +74,10 @@ if [ ! -f /synapse/config/homeserver.yaml ] && [ -z "$GEN" ]; then
 fi
  
 if [ ! -e /synapse/config/log.yaml ]; then
-  cp /synapse/log.yaml /synapse/config
+  (
+    set +eu
+    cp /synapse/log.yaml /synapse/config || true
+  )
 fi
 
 (
