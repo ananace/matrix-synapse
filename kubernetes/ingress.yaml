@@ -3,7 +3,6 @@ apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
   annotations:
-    ingress.kubernetes.io/ssl-passthrough: "true"
     kubernetes.io/tls-acme: "true"
   name: matrix-synapse
 spec:
