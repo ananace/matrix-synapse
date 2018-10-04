@@ -1,4 +1,4 @@
-FROM matrixdotorg/synapse:v0.33.5.1
+FROM matrixdotorg/synapse:v0.33.6
 
 MAINTAINER Alexander Olofsson <ace@haxalot.com>
 
