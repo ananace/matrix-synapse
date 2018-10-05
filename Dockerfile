@@ -1,4 +1,5 @@
-FROM matrixdotorg/synapse:v0.33.6
+ARG PYTHON_VERSION=""
+FROM matrixdotorg/synapse:v0.33.6${PYTHON_VERSION}
 
 MAINTAINER Alexander Olofsson <ace@haxalot.com>
 
