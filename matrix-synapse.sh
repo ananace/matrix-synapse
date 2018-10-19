@@ -80,10 +80,12 @@ if [ ! -e /synapse/config/log.yaml ]; then
   )
 fi
 
+echo "Ensuring file ownership..."
 (
   set +eu
-  chown -R synapse:synapse /synapse/config /synapse/data /synapse/keys /synapse/tls || true
-) &> /dev/null
+  chown -R synapse:synapse /synapse/config /synapse/keys /synapse/tls || true
+  chown -R synapse:synapse /synapse/data &
+) > /dev/null 2>&1
 
 echo "> python -m $APP -c /synapse/config/homeserver.yaml $ARGS $*"
 su synapse -s /bin/sh -c \
