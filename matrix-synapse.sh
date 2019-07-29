@@ -87,6 +87,10 @@ echo "Ensuring file ownership..."
   chown -R synapse:synapse /synapse/data &
 ) > /dev/null 2>&1
 
+if [ -n "${USE_JEMALLOC:-}" ]; then
+  JEMALLOC="LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libjemalloc.so.2 "
+fi
+
 echo "> python -m $APP -c /synapse/config/homeserver.yaml $ARGS $*"
 su synapse -s /bin/sh -c \
-  "python -B -m $APP -c /synapse/config/homeserver.yaml $ARGS $*"
+  "${JEMALLOC:-} python -B -m $APP -c /synapse/config/homeserver.yaml $ARGS $*"

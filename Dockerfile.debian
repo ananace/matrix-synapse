@@ -1,0 +1,75 @@
+ARG PYTHON_VERSION="3.7"
+
+###
+### Stage 0: builder
+###
+FROM docker.io/python:${PYTHON_VERSION}-slim as builder
+
+# install the OS build deps
+
+RUN apt-get update -yqq \
+ && apt-get install -y --no-install-recommends \
+    gcc wget libffi-dev libjpeg62-turbo-dev libssl-dev libxslt1-dev libpq-dev zlib1g-dev
+
+# build things which have slow build steps, before we copy synapse, so that
+# the layer can be cached.
+#
+# (we really just care about caching a wheel here, as the "pip install" below
+# will install them again.)
+
+RUN pip install --upgrade pip \
+ && pip install --prefix="/install" --no-warn-script-location \
+        cryptography \
+        msgpack-python \
+        pillow \
+        pynacl
+
+ARG SYNAPSE_VERSION="1.2.1"
+
+RUN mkdir /synapse \
+ && wget https://github.com/matrix-org/synapse/archive/v${SYNAPSE_VERSION}.tar.gz -O synapse.tar.gz \
+ && tar -xf synapse.tar.gz -C /synapse --strip-components=1
+
+# now install synapse and all of the python deps to /install.
+RUN pip install --prefix="/install" --no-warn-script-location \
+        /synapse[all]
+
+###
+### Stage 1: runtime
+###
+
+FROM docker.io/python:${PYTHON_VERSION}-slim
+
+# xmlsec is required for saml support
+RUN apt-get update -yqq \
+ && apt-get install -y --no-install-recommends \
+    libjemalloc2 libjpeg62-turbo libxslt1.1 libpq5 zlib1g xmlsec1 \
+ && apt-get autoclean -y \
+ && rm -rf /var/lib/apt/lists/* \
+ && mkdir -p /synapse/config /synapse/data /synapse/keys /synapse/tls \
+ && addgroup --system --gid 666 synapse \
+ && adduser --system --uid 666 --ingroup synapse --home /synapse/config --disabled-password --no-create-home synapse
+
+COPY --from=builder /install /usr/local
+COPY --from=builder /synapse/docker/start.py /start.py
+COPY --from=builder /synapse/docker/conf /conf
+
+# VOLUME ["/data"]
+
+# EXPOSE 8008/tcp 8009/tcp 8448/tcp
+
+# ENTRYPOINT ["/start.py"]
+
+# ARG PYTHON_VERSION=""
+# FROM matrixdotorg/synapse:v${SYNAPSE_VERSION}
+
+# MAINTAINER Alexander Olofsson <ace@haxalot.com>
+
+ADD log.yaml /synapse
+ADD matrix-synapse.sh /matrix-synapse
+VOLUME /synapse/config /synapse/data /synapse/keys /synapse/tls
+
+RUN chown -R synapse:synapse /synapse/config /synapse/data /synapse/keys /synapse/tls
+
+EXPOSE 8008/tcp 8009/tcp 8448/tcp
+ENTRYPOINT [ "/matrix-synapse" ]
