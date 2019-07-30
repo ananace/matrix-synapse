@@ -4,6 +4,7 @@ kind: Ingress
 metadata:
   annotations:
     kubernetes.io/tls-acme: "true"
+    nginx.ingress.kubernetes.io/use-regex: "true"
   name: matrix-synapse
 spec:
   rules:
@@ -14,52 +15,26 @@ spec:
       - backend:
           serviceName: mxisd
           servicePort: 8090
-        path: /_matrix/client/r0/user_directory
-      - backend:
-          serviceName: mxisd
-          servicePort: 8090
-        path: /_matrix/client/r0/login
-      - backend:
-          serviceName: mxisd
-          servicePort: 8090
-        path: /_matrix/identity
+        path: /_matrix/(identity|client/r0/(login|user_directory))
 
-      ## Sadly due to kubernetes/ingress-nginx#1260 regexps can't be done in a suitable manner,
-      #  so duplicating paths is currently the only way to set up rules like these with the nginx ingress.
+      ## Federation reader worker
       - backend:
           serviceName: federation-reader
           servicePort: 8083
-        path: /_matrix/federation/v1/event/
-      - backend:
-          serviceName: federation-reader
-          servicePort: 8083
-        path: /_matrix/federation/v1/state/
-      - backend:
-          serviceName: federation-reader
-          servicePort: 8083
-        path: /_matrix/federation/v1/state_ids/
-      - backend:
-          serviceName: federation-reader
-          servicePort: 8083
-        path: /_matrix/federation/v1/backfill/
-      - backend:
-          serviceName: federation-reader
-          servicePort: 8083
-        path: /_matrix/federation/v1/get_missing_events/
-      - backend:
-          serviceName: federation-reader
-          servicePort: 8083
-        path: /_matrix/federation/v1/publicRooms/
+        path: /_matrix/federation/v1/((event|state|state_ids|backfill|get_missing_events|query|make_join|make_leave|send_join|send_leave|invite|query_auth|event_auth|exchange_third_party_invite|send)/|publicRooms)
 
-      - backend: # Main synapse entry
+      ## The remaining traffic goes to Synapse itself
+      - backend:
           serviceName: matrix-synapse
           servicePort: 8008
         path: /_matrix/
 
-      - backend:
-          serviceName: riot
-          servicePort: 80
-        path: /
+      ## And if you're feeling like doing something insecure, you can serve a Riot instance on the root.
+      #  (Don't do this, put it on a different subdomain instead)
+      # - backend:
+      #     serviceName: riot
+      #     servicePort: 80
+      #   path: /
   tls:
   - hosts:
     - kittenface.studio
