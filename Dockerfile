@@ -1,5 +1,4 @@
-ARG SYNAPSE_VERSION="1.2.1"
-ARG PYTHON_VERSION=""
+ARG SYNAPSE_VERSION="1.3.0rc1"
 FROM matrixdotorg/synapse:v${SYNAPSE_VERSION}
 
 MAINTAINER Alexander Olofsson <ace@haxalot.com>
