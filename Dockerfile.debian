@@ -24,7 +24,7 @@ RUN pip install --upgrade pip \
         pillow \
         pynacl
 
-ARG SYNAPSE_VERSION="1.6.1"
+ARG SYNAPSE_VERSION="1.7.0"
 
 RUN mkdir /synapse \
  && wget https://github.com/matrix-org/synapse/archive/v${SYNAPSE_VERSION}.tar.gz -O synapse.tar.gz \
