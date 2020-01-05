@@ -128,14 +128,14 @@ spec:
               name: matrix-synapse-keys
             - mountPath: /synapse/config
               name: matrix-synapse-config
-        restartPolicy: Always
-        volumes:
-          # Will need to be a persistant volume of some kind to support media uploads, unless using matrix-media-repo
-          - name: matrix-synapse-data
-            emptyDir: {}
-          - name: matrix-synapse-keys
-            secret:
-              secretName: matrix-synapse-keys
-          - configMap:
-              name: matrix-synapse
-            name: matrix-synapse-config
+      restartPolicy: Always
+      volumes:
+        # Will need to be a persistant volume of some kind to support media uploads, unless using matrix-media-repo
+        - name: matrix-synapse-data
+          emptyDir: {}
+        - name: matrix-synapse-keys
+          secret:
+            secretName: matrix-synapse-keys
+        - configMap:
+            name: matrix-synapse
+          name: matrix-synapse-config
