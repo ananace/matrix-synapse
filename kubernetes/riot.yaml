@@ -95,7 +95,7 @@ spec:
     spec:
       containers:
       - image: vectorim/riot-web:v1.5.6
-        imagePullPolicy: IfNotExists
+        imagePullPolicy: IfNotPresent
         name: riot-web
         readinessProbe:
           tcpSocket:

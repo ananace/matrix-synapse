@@ -119,7 +119,7 @@ spec:
         - -c
         - /synapse/config/federation-sender.worker
         image: ananace/matrix-synapse:1.7.3
-        imagePullPolicy: IfNotExists
+        imagePullPolicy: IfNotPresent
         name: worker
         resources:
           limits:
@@ -174,7 +174,7 @@ spec:
         - -c
         - /synapse/config/synchrotron.worker
         image: ananace/matrix-synapse:1.7.3
-        imagePullPolicy: IfNotExists
+        imagePullPolicy: IfNotPresent
         name: worker
         resources:
           limits:

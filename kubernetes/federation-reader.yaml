@@ -86,7 +86,7 @@ spec:
         - name: SYNAPSE_CACHE_FACTOR
           value: "2.00"
         image: ananace/matrix-synapse:1.7.3
-        imagePullPolicy: IfNotExists
+        imagePullPolicy: IfNotPresent
         name: worker
         resources:
           limits:
