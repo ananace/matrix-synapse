@@ -3,6 +3,7 @@ kind: Service
 apiVersion: v1
 metadata:
   name: matrix-synapse-replication
+  namespace: matrix
 spec:
   ports:
     # Needs listeners added to the Synapse config as well, according to the
@@ -23,6 +24,7 @@ kind: Service
 apiVersion: v1
 metadata:
   name: matrix-synapse
+  namespace: matrix
 spec:
   ports:
     - name: http
@@ -42,6 +44,7 @@ kind: Secret
 apiVersion: v1
 metadata:
   name: matrix-synapse-tls
+  namespace: matrix
 data:
   tls.crt:
   tls.key:
@@ -53,6 +56,7 @@ kind: Secret
 apiVersion: v1
 metadata:
   name: matrix-synapse-keys
+  namespace: matrix
 data:
   signing.key:
 type: Opaque
