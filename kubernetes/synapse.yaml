@@ -5,10 +5,16 @@ metadata:
   name: matrix-synapse-replication
 spec:
   ports:
+    # Needs listeners added to the Synapse config as well, according to the
+    # workers documentation, if workers are to be used
     - name: replication
       protocol: TCP
       port: 9092
       targetPort: 9092
+    - name: http_replication
+      protocol: TCP
+      port: 9093
+      targetPort: 9093
   selector:
     app: matrix-synapse
   type: ClusterIP
@@ -27,10 +33,6 @@ spec:
       protocol: TCP
       port: 8448
       targetPort: 8448
-    - name: replication
-      protocol: TCP
-      port: 9092
-      targetPort: 9092
   selector:
     app: matrix-synapse
   type: ClusterIP
