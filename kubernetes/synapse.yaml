@@ -89,53 +89,51 @@ spec:
         app: matrix-synapse
     spec:
       containers:
-        - command: # As an example of how to add rest_auth to the container without requiring a separate image
-            - sh
-            - -c
-            - |
-              wget https://github.com/kamax-io/matrix-synapse-rest-auth/raw/master/rest_auth_provider.py -O /usr/local/lib/python2.7/site-packages/rest_auth_provider.py
-              /matrix-synapse
-          env:
-            - name: SYNAPSE_CACHE_FACTOR
-              value: "5.00"
-          image: ananace/matrix-synapse:1.7.3
-          imagePullPolicy: IfNotPresent
-          livenessProbe:
-            httpGet:
-              path: /_matrix/client/versions
-              port: 8008
-              scheme: HTTP
-            initialDelaySeconds: 120
-          name: matrix-synapse
-          readinessProbe:
-            httpGet:
-              path: /_matrix/client/versions
-              port: 8008
-              scheme: HTTP
-            initialDelaySeconds: 10
-          resources:
-            # These are just some arbitrary values, will have to be tuned or removed per-deployment
-            requests:
-              memory: 250Mi
-              cpu: 250m
-            limits:
-              memory: 1Gi
-              cpu: 1
-          volumeMounts:
-            - mountPath: /synapse/data
-              name: matrix-synapse-data
-            - mountPath: /synapse/keys
-              name: matrix-synapse-keys
-            - mountPath: /synapse/config
-              name: matrix-synapse-config
-        restartPolicy: Always
-        volumes:
-          # Will need to be a persistant volume of some kind to support media uploads, unless using matrix-media-repo
-          - name: matrix-synapse-data
-            emptyDir: {}
-          - name: matrix-synapse-keys
-            secret:
-              secretName: matrix-synapse-keys
-          - configMap:
-              name: matrix-synapse
+      - command: # As an example of how to add rest_auth to the container without requiring a separate image
+          - sh
+          - -c
+          - |
+            wget https://github.com/kamax-io/matrix-synapse-rest-auth/raw/master/rest_auth_provider.py -O /usr/local/lib/python2.7/site-packages/rest_auth_provider.py /matrix-synapse
+        name: matrix-synapse
+        image: ananace/matrix-synapse:1.7.3
+        imagePullPolicy: IfNotPresent
+        env:
+          - name: SYNAPSE_CACHE_FACTOR
+            value: "5.00"
+        livenessProbe:
+          httpGet:
+            path: /_matrix/client/versions
+            port: 8008
+            scheme: HTTP
+          initialDelaySeconds: 120
+        readinessProbe:
+          httpGet:
+            path: /_matrix/client/versions
+            port: 8008
+            scheme: HTTP
+          initialDelaySeconds: 10
+        resources:
+          # These are just some arbitrary values, will have to be tuned or removed per-deployment
+          requests:
+            memory: 250Mi
+            cpu: 250m
+          limits:
+            memory: 1Gi
+            cpu: 1
+        volumeMounts:
+          - mountPath: /synapse/data
+            name: matrix-synapse-data
+          - mountPath: /synapse/keys
+            name: matrix-synapse-keys
+          - mountPath: /synapse/config
             name: matrix-synapse-config
+      restartPolicy: Always
+      volumes:
+        - name: matrix-synapse-data
+          emptyDir: {}
+        - name: matrix-synapse-keys
+          secret:
+            secretName: matrix-synapse-keys
+        - configMap:
+            name: matrix-synapse
+          name: matrix-synapse-config
