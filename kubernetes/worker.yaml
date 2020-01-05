@@ -7,6 +7,7 @@ data:
     # The replication listener on the synapse to talk to.
     worker_replication_host: matrix-synapse-replication
     worker_replication_port: 9092
+    worker_replication_http_port: 9093
 
     worker_listeners:
     - type: http
@@ -14,6 +15,12 @@ data:
       resources:
         - names:
           - client
+    - port: 9090
+      bind_addresses: ['0.0.0.0']
+      type: http
+      resources:
+        - names: [metrics]
+          compress: false
 
     worker_log_config: /synapse/config/log.yaml
   synchrotron.worker: |
@@ -24,6 +31,7 @@ data:
     # The replication listener on the synapse to talk to.
     worker_replication_host: matrix-synapse-replication
     worker_replication_port: 9092
+    worker_replication_http_port: 9093
 
     worker_listeners:
     - type: http
@@ -31,8 +39,16 @@ data:
       resources:
         - names:
           - client
+    - port: 9090
+      bind_addresses: ['0.0.0.0']
+      type: http
+      resources:
+        - names: [metrics]
+          compress: false
 
     worker_log_config: /synapse/config/log.yaml
+
+  # Here just as an example, might want to store worker config separately from main config
   homeserver.yaml: |
     ## To fill this in, use docker to generate a homeserver.yaml file
     # ...
@@ -67,7 +83,7 @@ spec:
     worker: synchrotron
   type: ClusterIP
 ---
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
@@ -86,36 +102,43 @@ spec:
         app: matrix-synapse-worker
         worker: federation-sender
     spec:
+      # Avoid co-locating workers with the main Synapse pod if possible
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - matrix-synapse
+            topologyKey: kubernetes.io/hostname
       containers:
       - args:
         - synapse.app.federation_sender
         - -c
         - /synapse/config/federation-sender.worker
-        image: ananace/matrix-synapse:0.28.0
+        image: ananace/matrix-synapse:1.7.3
+        imagePullPolicy: IfNotExists
         name: worker
         resources:
           limits:
             memory: 512Mi
         volumeMounts:
-        - mountPath: /synapse/tls
-          name: matrix-synapse-tls
         - mountPath: /synapse/keys
-          name: matrix-synapse-tls-dh
+          name: matrix-synapse-keys
         - mountPath: /synapse/config
           name: matrix-synapse-config
       restartPolicy: Always
       volumes:
-      - name: matrix-synapse-tls
+      - name: matrix-synapse-keys
         secret:
-          secretName: matrix-synapse-tls
-      - name: matrix-synapse-tls-dh
-        secret:
-          secretName: matrix-synapse-tls-dh
+          secretName: matrix-synapse-keys
       - configMap:
           name: matrix-synapse
         name: matrix-synapse-config
 ---
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
@@ -128,38 +151,40 @@ spec:
     matchLabels:
       app: matrix-synapse-worker
       worker: synchrotron
-  strategy:
-    rollingUpdate:
-      maxSurge: 1
-      maxUnavailable: 1
-    type: RollingUpdate
   template:
     metadata:
       labels:
         app: matrix-synapse-worker
         worker: synchrotron
     spec:
+      # Avoid co-locating workers with the main Synapse pod if possible
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - matrix-synapse
+            topologyKey: kubernetes.io/hostname
       containers:
       - args:
         - synapse.app.synchrotron
         - -c
         - /synapse/config/synchrotron.worker
-        image: ananace/matrix-synapse:0.28.0
+        image: ananace/matrix-synapse:1.7.3
+        imagePullPolicy: IfNotExists
         name: worker
         resources:
           limits:
             memory: 256Mi
         volumeMounts:
-        - mountPath: /synapse/tls
-          name: matrix-synapse-tls
         - mountPath: /synapse/keys
           name: matrix-synapse-keys
         - mountPath: /synapse/config
           name: matrix-synapse-config
       volumes:
-      - name: matrix-synapse-tls
-        secret:
-          secretName: matrix-synapse-tls
       - name: matrix-synapse-keys
         secret:
           secretName: matrix-synapse-keys

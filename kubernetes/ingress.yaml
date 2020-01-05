@@ -1,41 +1,109 @@
+# The ingress configuration comes with both nginx and traefik values, one of which might be removed depending on which ingress is deployed
 ---
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
   annotations:
     kubernetes.io/tls-acme: "true"
-    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: 500m
+    nginx.ingress.kubernetes.io/upstream-vhost: example.com
+    traefik.ingress.kubernetes.io/custom-request-headers: X-Forwarded-Host:example.com
+    traefik.ingress.kubernetes.io/proxy-body-size: 500m
   name: matrix-synapse
+  namespace: matrix
 spec:
   rules:
-  - host: kittenface.studio
+  - host: example.com
     http:
       paths:
-      ## mxisd support for directory, authentication, and identity
-      - backend:
-          serviceName: mxisd
-          servicePort: 8090
-        path: /_matrix/(identity|client/r0/(login|user_directory))
+      # Federation-facing paths
 
-      ## Federation reader worker
+      # V These paths are only for the federation-reader worker, must be removed if it's not used
       - backend:
           serviceName: federation-reader
           servicePort: 8083
         path: /_matrix/federation/v1/((event|state|state_ids|backfill|get_missing_events|query|make_join|make_leave|send_join|send_leave|invite|query_auth|event_auth|exchange_third_party_invite|send)/|publicRooms)
+      - backend:
+          serviceName: federation-reader
+          servicePort: 8083
+        path: /_matrix/federation/v1/{path:((event|state|state_ids|backfill|get_missing_events|query|make_join|make_leave|send_join|send_leave|invite|query_auth|event_auth|exchange_third_party_invite|send)/|publicRooms)}
+      - backend:
+          serviceName: federation-reader
+          servicePort: 8083
+        path: /_matrix/key/v2/query
+      # ^
 
-      ## The remaining traffic goes to Synapse itself
+      # V If the ma1sd identity server is being used, can be removed otherwise
+      - backend:
+          serviceName: ma1sd
+          servicePort: 8090
+        path: /_matrix/client/r0/user_directory
+      - backend:
+          serviceName: ma1sd
+          servicePort: 8090
+        path: /_matrix/identity
+      # ^
+
+      # V If the media-repo is being used, can be removed otherwise
+      - backend:
+          serviceName: matrix-media-repo
+          servicePort: 8000
+        path: /_matrix/media
+      # ^
+
       - backend:
           serviceName: matrix-synapse
           servicePort: 8008
-        path: /_matrix/
+        path: /.well-known/matrix
+      - backend:
+          serviceName: matrix-synapse
+          servicePort: 8008
+        path: /_matrix
 
-      ## And if you're feeling like doing something insecure, you can serve a Riot instance on the root.
-      #  (Don't do this, put it on a different subdomain instead)
-      # - backend:
-      #     serviceName: riot
-      #     servicePort: 80
-      #   path: /
+  - host: matrix.example.com
+    http:
+      paths:
+      # Client-facing paths, don't need federation-only paths here
+
+      # V If the ma1sd identity server is being used, can be removed otherwise
+      - backend:
+          serviceName: ma1sd
+          servicePort: 8090
+        path: /_matrix/client/r0/user_directory
+      - backend:
+          serviceName: ma1sd
+          servicePort: 8090
+        path: /_matrix/identity
+      # ^
+
+      # V If the media-repo is being used, can be removed otherwise
+      - backend:
+          serviceName: matrix-media-repo
+          servicePort: 8000
+        path: /_matrix/media
+      # ^
+
+      - backend:
+          serviceName: matrix-synapse
+          servicePort: 8008
+        path: /_matrix
+
+  # If Riot's being ran in K8s as well
+  - host: riot.example.com
+    http:
+      paths:
+      - backend:
+          serviceName: riot
+          servicePort: 80
+        path: /
   tls:
+  # The main domain rules might want to be moved elsewhere if needed
   - hosts:
-    - kittenface.studio
+    - example.com
+    secretName: top-level-tls
+  - hosts:
+    - matrix.example.com
     secretName: matrix-synapse-tls
+  - hosts:
+    - riot.example.com
+    secretName: riot-tls

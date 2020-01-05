@@ -1,0 +1,126 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: matrix-media-repo
+  name: matrix-media-repo
+  namespace: matrix
+spec:
+  ports:
+  - port: 8000
+    protocol: TCP
+    targetPort: 8000
+  selector:
+    app: matrix-media-repo
+  type: ClusterIP
+---
+# The matrix-media-repo requires a Postgres instance, much like Synapse itself if wanting to federate
+# configuration is recommended to be based off of upstream
+apiVersion: v1
+data:
+  config.yaml: |
+    repo:
+      bindAddress: '0.0.0.0'
+      port: 8000
+      logDirectory: '-'
+
+    metrics:
+      enabled: true
+      bindAddress: "0.0.0.0"
+      port: 9000
+
+    database:
+      postgres: "postgres://..."
+
+    homeservers:
+      - name: example.com
+        csApi: "https://matrix.example.com/"
+        backoffAt: 10
+
+    admins:
+      - "@admin:example.com"
+
+    datastores:
+      - type: file
+        enabled: true
+        forUploads: true
+        opts:
+          path: /var/matrix/media
+          
+    ...
+kind: ConfigMap
+metadata:
+  name: matrix-media-repo
+  namespace: matrix
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: matrix-media-repo
+  name: matrix-media-repo
+  namespace: matrix
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: matrix-media-repo
+  template:
+    metadata:
+      annotations:
+        prometheus.io/port: "9090"
+        prometheus.io/scrape: "true"
+      labels:
+        app: matrix-media-repo
+    spec:
+      containers:
+      # Example command for adding imagemagick to support SVG scaling, can be removed
+      - command:
+        - sh
+        - -c
+        - |
+          apk add --no-cache imagemagick
+          /usr/local/bin/run.sh
+        image: turt2live/matrix-media-repo
+        imagePullPolicy: Always
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: http
+            scheme: HTTP
+          initialDelaySeconds: 30
+        name: matrix-media-repo
+        ports:
+        - containerPort: 8000
+          name: http
+          protocol: TCP
+        - containerPort: 9090
+          name: metrics
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: http
+            scheme: HTTP
+        resources:
+          limits:
+            cpu: 250m
+            memory: 512Mi
+          requests:
+            cpu: 10m
+            memory: 40Mi
+        volumeMounts:
+        - mountPath: /data/media-repo.yaml
+          name: config
+          subPath: config.yaml
+        - mountPath: /var/matrix/media
+          name: data
+      restartPolicy: Always
+      volumes:
+      - configMap:
+          name: matrix-media-repo
+        name: config
+      - name: data
+        persistentVolumeClaim:
+          claimName: matrix-media-repo

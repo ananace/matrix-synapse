@@ -51,22 +51,42 @@ metadata:
   name: federation-reader
   namespace: matrix
 spec:
+  replicas: 1
   selector:
     matchLabels:
       app: matrix-synapse-worker
       worker: federation-reader
   template:
     metadata:
+      annotations:
+        prometheus.io/path: /_synapse/metrics
+        prometheus.io/port: "9090"
+        prometheus.io/scrape: "true"
       labels:
         app: matrix-synapse-worker
         worker: federation-reader
     spec:
+      # Avoid co-locating workers with the main Synapse pod if possible
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - matrix-synapse
+            topologyKey: kubernetes.io/hostname
       containers:
       - args:
         - synapse.app.federation_reader
         - -c
         - /synapse/config/federation-reader.worker
-        image: ananace/matrix-synapse:0.28.0
+        env:
+        - name: SYNAPSE_CACHE_FACTOR
+          value: "2.00"
+        image: ananace/matrix-synapse:1.7.3
+        imagePullPolicy: IfNotExists
         name: worker
         resources:
           limits:

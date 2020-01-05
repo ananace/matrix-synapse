@@ -35,6 +35,7 @@ spec:
     app: matrix-synapse
   type: ClusterIP
 ---
+# This secret might be better left to cert-manager or the like to create and fill
 kind: Secret
 apiVersion: v1
 metadata:
@@ -44,19 +45,20 @@ data:
   tls.key:
 type: kubernetes.io/tls
 ---
+# This secret must contain a valid Matrix Synapse signing key, one can be generated
+# with the generate_signing_key.py script that's provided with the software
 kind: Secret
 apiVersion: v1
 metadata:
   name: matrix-synapse-keys
 data:
-  dhparams.pam:
   signing.key:
 type: Opaque
 ---
 apiVersion: v1
 data:
   homeserver.yaml: |
-    ## To fill this in, use docker to generate a homeserver.yaml file
+    ## Generate a homeserver.yaml file and configure + insert it here
     #
     # ...
     #
@@ -65,69 +67,75 @@ metadata:
   name: matrix-synapse
   namespace: matrix
 ---
+apiVersion: apps/v1
 kind: Deployment
-apiVersion: extensions/v1beta1
 metadata:
-  name: matrix-synapse
   labels:
     app: matrix-synapse
+  name: matrix-synapse
+  namespace: matrix
 spec:
+  replicas: 1
   selector:
     matchLabels:
       app: matrix-synapse
   template:
     metadata:
+      annotations:
+        prometheus.io/path: /_synapse/metrics
+        prometheus.io/port: "9090"
+        prometheus.io/scrape: "true"
       labels:
         app: matrix-synapse
     spec:
-      volumes:
-        - name: matrix-synapse-data
-          emptyDir: {}
-        - name: matrix-synapse-tls
-          secret:
-            secretName: matrix-synapse-tls
-        - name: matrix-synapse-keys
-          secret:
-            secretName: matrix-synapse-keys
-        - name: matrix-synapse-config
-          configMap:
-            name: matrix-synapse-config
       containers:
-        - name: matrix-synapse
-          command: # As an example of how to add rest_auth to the container without requiring a separate image
-          - sh
-          - -c
-          - |
-            wget https://github.com/kamax-io/matrix-synapse-rest-auth/raw/master/rest_auth_provider.py -O /usr/local/lib/python2.7/site-packages/rest_auth_provider.py
-            /matrix-synapse
-          image: ananace/matrix-synapse:0.31.2
-          volumeMounts:
-            - name: matrix-synapse-data
-              mountPath: /synapse/data/homeserver.yaml
-              subPath: homeserver.yaml
-            - name: matrix-synapse-config
-              mountPath: /synapse/config
-            - name: matrix-synapse-keys
-              mountPath: /synapse/keys
-            - name: matrix-synapse-tls
-              mountPath: /synapse/tls
+        - command: # As an example of how to add rest_auth to the container without requiring a separate image
+            - sh
+            - -c
+            - |
+              wget https://github.com/kamax-io/matrix-synapse-rest-auth/raw/master/rest_auth_provider.py -O /usr/local/lib/python2.7/site-packages/rest_auth_provider.py
+              /matrix-synapse
           env:
             - name: SYNAPSE_CACHE_FACTOR
-              value: '0.01'
-          resources:
-            request:
-              memory: 250Mi
-              cpu: 250m
-            limits:
-              memory: 4Gi
-              cpu: 1
+              value: "5.00"
+          image: ananace/matrix-synapse:1.7.3
+          imagePullPolicy: IfNotExists
           livenessProbe:
-            failureThreshold: 5
             httpGet:
               path: /_matrix/client/versions
               port: 8008
               scheme: HTTP
-            initialDelaySeconds: 30
-            periodSeconds: 20
-            successThreshold: 1
-            timeoutSeconds: 5
+            initialDelaySeconds: 120
+          name: matrix-synapse
+          readinessProbe:
+            httpGet:
+              path: /_matrix/client/versions
+              port: 8008
+              scheme: HTTP
+            initialDelaySeconds: 10
+          resources:
+            # These are just some arbitrary values, will have to be tuned or removed per-deployment
+            request:
+              memory: 250Mi
+              cpu: 250m
+            limits:
+              memory: 1Gi
+              cpu: 1
+          volumeMounts:
+            - mountPath: /synapse/data
+              name: matrix-synapse-data
+            - mountPath: /synapse/keys
+              name: matrix-synapse-keys
+            - mountPath: /synapse/config
+              name: matrix-synapse-config
+        restartPolicy: Always
+        volumes:
+          # Will need to be a persistant volume of some kind to support media uploads, unless using matrix-media-repo
+          - name: matrix-synapse-data
+            emptyDir: {}
+          - name: matrix-synapse-keys
+            secret:
+              secretName: matrix-synapse-keys
+          - configMap:
+              name: matrix-synapse
+            name: matrix-synapse-config
