@@ -115,7 +115,7 @@ spec:
             initialDelaySeconds: 10
           resources:
             # These are just some arbitrary values, will have to be tuned or removed per-deployment
-            request:
+            requests:
               memory: 250Mi
               cpu: 250m
             limits:
