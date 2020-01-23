@@ -23,10 +23,18 @@ spec:
           serviceName: federation-reader
           servicePort: 8083
         path: /_matrix/federation/v1/((event|state|state_ids|backfill|get_missing_events|query|make_join|make_leave|send_join|send_leave|invite|query_auth|event_auth|exchange_third_party_invite|send)/|publicRooms)
+      - backend:    
+          serviceName: federation-reader    
+          servicePort: 8083    
+        path: /_matrix/federation/v2/(send_join|send_leave|invite)    
       - backend:
           serviceName: federation-reader
           servicePort: 8083
         path: /_matrix/federation/v1/{path:((event|state|state_ids|backfill|get_missing_events|query|make_join|make_leave|send_join|send_leave|invite|query_auth|event_auth|exchange_third_party_invite|send)/|publicRooms)}
+      - backend:    
+          serviceName: federation-reader    
+          servicePort: 8083    
+        path: /_matrix/federation/v2/{path:(send_join|send_leave|invite)}    
       - backend:
           serviceName: federation-reader
           servicePort: 8083
