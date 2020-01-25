@@ -74,12 +74,21 @@ if [ ! -f /synapse/config/homeserver.yaml ] && [ -z "$GEN" ]; then
 fi
  
 if [ ! -e /synapse/config/log.yaml ]; then
-  (
-    set +eu
-    cp /synapse/log.yaml /synapse/config || true
-  )
+  if touch /synapse/config/log.yaml 2>/dev/null; then
+    (
+      set +eu
+      cp /synapse/log.yaml /synapse/config/log.yaml || true
+    )
+  else
+    echo "Warning, no log config was specified, and the init script is not allowed to write one."
+    echo "You should manually insert the log config into your config folder;"
+    echo
+    cat /synapse/log.yaml
+    echo
+  fi
 fi
 
+# TODO: Avoid doing this on every boot as well
 echo "Ensuring file ownership..."
 (
   set +eu
