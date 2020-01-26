@@ -88,13 +88,15 @@ if [ ! -e /synapse/config/log.yaml ]; then
   fi
 fi
 
-# TODO: Avoid doing this on every boot as well
-echo "Ensuring file ownership..."
-(
-  set +eu
-  chown -R synapse:synapse /synapse/config /synapse/keys /synapse/tls || true
-  chown -R synapse:synapse /synapse/data &
-) > /dev/null 2>&1
+if [ $(id -u) -eq 0 ]; then
+  # TODO: Avoid doing this on every boot as well
+  echo "Running as root, ensuring file ownership..."
+  (
+    set +eu
+    chown -R synapse:synapse /synapse/config /synapse/keys /synapse/tls || true
+    chown -R synapse:synapse /synapse/data &
+  ) > /dev/null 2>&1
+fi
 
 if [ -n "${USE_JEMALLOC:-}" ]; then
   JEMALLOC="LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libjemalloc.so.2 "
