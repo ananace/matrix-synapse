@@ -102,6 +102,12 @@ if [ -n "${USE_JEMALLOC:-}" ]; then
   JEMALLOC="LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libjemalloc.so.2 "
 fi
 
-echo "> python -m $APP -c /synapse/config/homeserver.yaml $ARGS $*"
-su synapse -s /bin/sh -c \
-  "${JEMALLOC:-} python -B -m $APP -c /synapse/config/homeserver.yaml $ARGS $*"
+command_str="python -B -m $APP -c /synapse/config/homeserver.yaml $ARGS $*"
+exec_str="${JEMALLOC:-} $command_str"
+
+echo "> $command_str"
+if [ $(id -u) -eq 0 ]; then
+  exec su synapse -s /bin/sh -c "$exec_str"
+else
+  exec "$exec_str"
+fi
