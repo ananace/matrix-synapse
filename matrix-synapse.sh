@@ -73,6 +73,7 @@ if [ ! -f /synapse/config/homeserver.yaml ] && [ -z "$GEN" ]; then
   exit 1
 fi
  
+# XXX: Might be suitable to read all config from tmp path, for envvar support on read-only root
 if [ ! -e /synapse/config/log.yaml ]; then
   if touch /synapse/config/log.yaml 2>/dev/null; then
     (
