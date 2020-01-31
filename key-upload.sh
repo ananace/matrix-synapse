@@ -3,9 +3,13 @@
 set -euo pipefail
 
 check_key() {
+  set +e
+
   echo "Checking for existing signing key..."
-  kubectl get secret $SECRET_NAME 2> /dev/null
-  return $?
+  key=$(kubectl get secret $SECRET_NAME -o jsonpath="{.data['signing\.key']}" 2> /dev/null)
+  [ $? -ne 0 ] && return 1
+  [ -z "$key" ] && return 2
+  return 0
 }
 
 create_key() {
@@ -13,18 +17,26 @@ create_key() {
   begin=$(date +%s)
   end=$((begin + 300)) # 5 minutes
   while true; do
-    [ -f /synapse/keys/*.signing.key ] && return 0
+    [ -f /synapse/keys/signing.key ] && return 0
     [ $(date +%s) -gt $end ] && return 1
     sleep 5
   done
 }
 
 store_key() {
+  # TODO: Update/replace feature
   echo "Storing signing key in Kubernetes secret..."
-  kubectl create secret generic $SECRET_NAME --from-file=signing.key=/synapse/keys/*.signing.key 2> /dev/null
+  kubectl create secret generic $SECRET_NAME --from-file=signing.key=/synapse/keys/signing.key 2> /dev/null
 }
 
-check_key && exit
+if check_key; then
+  echo "Key already in place, exiting."
+  exit
+fi
 
-create_key
+if !create_key; then
+  echo "Timed out waiting for a signing key to appear."
+  exit 1
+fi
+
 store_key
