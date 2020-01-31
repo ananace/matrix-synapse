@@ -130,6 +130,10 @@ spec:
         - mountPath: /synapse/config
           name: matrix-synapse-config
       restartPolicy: Always
+      securityContext:
+        fsGroup: 666
+        runAsGroup: 666
+        runAsUser: 666
       volumes:
       - name: matrix-synapse-keys
         secret:
@@ -184,6 +188,10 @@ spec:
           name: matrix-synapse-keys
         - mountPath: /synapse/config
           name: matrix-synapse-config
+      securityContext:
+        fsGroup: 666
+        runAsGroup: 666
+        runAsUser: 666
       volumes:
       - name: matrix-synapse-keys
         secret:
