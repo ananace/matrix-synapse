@@ -10,6 +10,7 @@ RUN set -eux \
 
 ADD log.yaml /synapse
 ADD matrix-synapse.sh /matrix-synapse
+ADD key-upload.sh /key-upload
 VOLUME /synapse/config /synapse/data /synapse/keys /synapse/tls
 
 RUN chown -R synapse:synapse /synapse/config /synapse/data /synapse/keys /synapse/tls
