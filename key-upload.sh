@@ -1,6 +1,6 @@
 #!/bin/sh
 
-set -euo pipefail
+set -eu
 
 check_key() {
   set +e
@@ -44,7 +44,7 @@ if check_key; then
   exit
 fi
 
-if !create_key; then
+if ! create_key; then
   echo "Timed out waiting for a signing key to appear."
   exit 1
 fi
