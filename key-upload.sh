@@ -24,9 +24,19 @@ create_key() {
 }
 
 store_key() {
-  # TODO: Update/replace feature
+  # TODO: Better update/replace feature
   echo "Storing signing key in Kubernetes secret..."
-  kubectl create secret generic $SECRET_NAME --from-file=signing.key=/synapse/keys/signing.key 2> /dev/null
+  kubectl apply -f - <<EOF
+kind: Secret
+apiVersion: v1
+metadata:
+  labels:
+    app: ${APP_NAME:-matrix-synapse}
+  name: $SECRET_NAME
+data:
+  signing.key: $(base64 /synapse/keys/signing.key | tr -d '\n')
+type: Opaque
+EOF
 }
 
 if check_key; then
