@@ -1,0 +1,112 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: matrix-signing-key-sa
+  namespace: matrix
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: matrix-signing-key-sa
+  namespace: matrix
+rules:
+- apiGroups:
+  - ""
+  resourceNames:
+  - matrix-signing-key
+  resources:
+  - secrets
+  verbs:
+  - get
+  - create
+  - update
+  - patch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: matrix-signing-key-sa
+  namespace: matrix
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: matrix-signing-key-sa
+subjects:
+- kind: ServiceAccount
+  name: matrix-signing-key-sa
+  namespace: matrix
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  labels:
+    app: matrix-synapse-job
+    job: signing-key-generation
+  name: matrix-synapse-signing-key
+  namespace: matrix
+spec:
+  template:
+    metadata:
+      labels:
+        app: matrix-synapse-job
+        job: signing-key-generation
+    spec:
+      containers:
+        - command:
+            - sh
+            - -c
+            - |
+              echo "Copying key upload script..."
+              cp /key-upload /scripts/
+              echo "Generating signing key..."
+              /usr/local/bin/generate_signing_key.py -o /synapse/keys/signing.key
+          image: ananace/matrix-synapse:1.9.1-test
+          imagePullPolicy: IfNotExists
+          name: signing-key-generate
+          resources:
+            requests:
+              memory: 10Mi
+              cpu: 10m
+            limits:
+              memory: 25Mi
+              cpu: 100m
+          volumeMounts:
+            - mountPath: /scripts
+              name: scripts
+            - mountPath: /synapse/keys
+              name: matrix-synapse-keys
+        - command:
+            - sh
+            - -c
+            - |
+              echo "Waiting for key upload script"
+              while ! [ -f /scripts/key-upload ]; do sleep 1; done
+              /scripts/key-upload
+          env:
+            - name: SECRET_NAME
+              value: matrix-signing-key
+          image: bitnami/kubectl
+          name: signing-key-upload
+          resources:
+            requests:
+              memory: 10Mi
+              cpu: 10m
+            limits:
+              memory: 50Mi
+              cpu: 100m
+          volumeMounts:
+            - mountPath: /scripts
+              name: scripts
+              readOnly: true
+            - mountPath: /synapse/keys
+              name: matrix-synapse-keys
+              readOnly: true
+      restartPolicy: Never
+      serviceAccount: matrix-signing-key-sa
+      volumes:
+        - name: scripts
+          emptyDir: {}
+        - name: matrix-synapse-keys
+          emptyDir: {}
+
