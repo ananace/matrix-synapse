@@ -135,6 +135,10 @@ spec:
             - mountPath: /synapse/config
               name: matrix-synapse-config
       restartPolicy: Always
+      securityContext:
+        fsGroup: 666
+        runAsGroup: 666
+        runAsUser: 666
       volumes:
         # Will need to be a persistant volume of some kind to support media uploads, unless using matrix-media-repo
         - name: matrix-synapse-data
