@@ -38,4 +38,4 @@ $ docker run --rm -it \
      -c /synapse/config/synchrotron.worker
 ```
 
-More information about workers can be found at; https://github.com/matrix-org/synapse/blob/master/docs/workers.rst
+More information about workers can be found at; https://github.com/matrix-org/synapse/blob/master/docs/workers.md
