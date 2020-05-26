@@ -13,5 +13,5 @@ ADD log.yaml /synapse
 ADD matrix-synapse.sh /matrix-synapse
 ADD key-upload.sh /key-upload
 
-EXPOSE 8008/tcp 8009/tcp 8448/tcp
+EXPOSE 8008/tcp 8448/tcp
 ENTRYPOINT [ "/matrix-synapse" ]
