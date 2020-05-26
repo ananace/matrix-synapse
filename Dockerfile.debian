@@ -1,4 +1,4 @@
-ARG PYTHON_VERSION="3.7"
+ARG PYTHON_VERSION="3.8"
 
 ###
 ### Stage 0: builder
@@ -24,7 +24,7 @@ RUN pip install --upgrade pip \
         pillow \
         pynacl
 
-ARG SYNAPSE_VERSION="1.13.0"
+ARG SYNAPSE_VERSION="1.14.0rc1"
 
 RUN mkdir /synapse \
  && wget https://github.com/matrix-org/synapse/archive/v${SYNAPSE_VERSION}.tar.gz -O synapse.tar.gz \
@@ -46,30 +46,18 @@ RUN apt-get update -yqq \
     libjemalloc2 libjpeg62-turbo libxslt1.1 libpq5 zlib1g xmlsec1 \
  && apt-get autoclean -y \
  && rm -rf /var/lib/apt/lists/* \
- && mkdir -p /synapse/config /synapse/data /synapse/keys /synapse/tls \
+ && mkdir -p /synapse/config/conf.d /synapse/data /synapse/keys /synapse/tls \
  && addgroup --system --gid 666 synapse \
- && adduser --system --uid 666 --ingroup synapse --home /synapse/config --disabled-password --no-create-home synapse
+ && adduser --system --uid 666 --ingroup synapse --home /synapse/data --disabled-password --no-create-home synapse \
+ && chown -R synapse:synapse /synapse/config /synapse/data /synapse/keys /synapse/tls
 
 COPY --from=builder /install /usr/local
 COPY --from=builder /synapse/docker/start.py /start.py
 COPY --from=builder /synapse/docker/conf /conf
 
-# VOLUME ["/data"]
-
-# EXPOSE 8008/tcp 8009/tcp 8448/tcp
-
-# ENTRYPOINT ["/start.py"]
-
-# ARG PYTHON_VERSION=""
-# FROM matrixdotorg/synapse:v${SYNAPSE_VERSION}
-
-# MAINTAINER Alexander Olofsson <ace@haxalot.com>
-
 ADD log.yaml /synapse
 ADD matrix-synapse.sh /matrix-synapse
-VOLUME /synapse/config /synapse/data /synapse/keys /synapse/tls
-
-RUN chown -R synapse:synapse /synapse/config /synapse/data /synapse/keys /synapse/tls
+ADD key-upload.sh /key-upload
 
 EXPOSE 8008/tcp 8009/tcp 8448/tcp
 ENTRYPOINT [ "/matrix-synapse" ]

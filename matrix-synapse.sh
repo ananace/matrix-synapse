@@ -63,6 +63,10 @@ if [ -n "${USE_JEMALLOC:-}" ]; then
   export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libjemalloc.so.2
 fi
 
+if [ -d '/synapse/config/conf.d' ]; then
+  ARGS="-c /synapse/config/conf.d $ARGS"
+fi
+
 command_str="python"
 args_str="-B -m $APP -c /synapse/config/homeserver.yaml $ARGS $*"
 
