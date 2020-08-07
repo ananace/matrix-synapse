@@ -18,7 +18,7 @@ case "${1:-start}" in
     if [ $# -lt 2 ]; then
       echo "You need to specify at least \`-c /worker-config.yaml\` if trying to run a worker"
       echo
-      echo "More information can be found on https://github.com/matrix-org/synapse/blob/master/docs/workers.rst"
+      echo "More information can be found on https://github.com/matrix-org/synapse/blob/master/docs/workers.md"
       exit 1
     fi
     ;;
