@@ -6,7 +6,7 @@ check_key() {
   set +e
 
   echo "Checking for existing signing key..."
-  key=$(kubectl get secret $SECRET_NAME -o jsonpath="{.data['signing\.key']}" 2> /dev/null)
+  key="$(kubectl get secret "$SECRET_NAME" -o jsonpath="{.data['signing\.key']}" 2> /dev/null)" 
   [ $? -ne 0 ] && return 1
   [ -z "$key" ] && return 2
   return 0
@@ -18,7 +18,7 @@ create_key() {
   end=$((begin + 300)) # 5 minutes
   while true; do
     [ -f /synapse/keys/signing.key ] && return 0
-    [ $(date +%s) -gt $end ] && return 1
+    [ "$(date +%s)" -gt $end ] && return 1
     sleep 5
   done
 }
