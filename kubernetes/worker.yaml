@@ -25,7 +25,7 @@ data:
     worker_log_config: /synapse/config/log.yaml
   synchrotron.worker: |
     # More information about the content of this file can be found at
-    # https://github.com/matrix-org/synapse/blob/master/docs/workers.rst
+    # https://github.com/matrix-org/synapse/blob/master/docs/workers.md
     worker_app: synapse.app.synchrotron
 
     # The replication listener on the synapse to talk to.
