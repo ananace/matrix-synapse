@@ -1,11 +1,11 @@
 Matrix Synapse
 ==============
 
-A Kubernetes-optimized Synapse image, example manifests can be found in the [kubernetes](kubernetes/) folder.
+A Kubernetes-optimized Synapse image, some old example manifests can be found in the [kubernetes](kubernetes/) folder.
 
 For a managed deployment, look at the charts available at;  
-https://gitlab.com/ananace/charts - supports workers, handles the signing key as a secret.  
-https://github.com/dacruz21/matrix-chart/ - lacks workers, mounts a PVC for signing key, includes bridges and a mail relay.
+https://gitlab.com/ananace/charts - supports workers, handles the signing key as a secret, built upon the K8s ingress resource.  
+https://github.com/dacruz21/matrix-chart/ - lacks workers, mounts a PVC for signing key, includes bridges and a mail relay, requires LoadBalancer support.
 
 &nbsp;
 
