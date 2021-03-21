@@ -1,6 +1,10 @@
 Matrix Synapse
 ==============
 
+**NB**; This image is deprecated for Kubernetes use, suggestions are to look at the Helm Charts listed below instead.
+
+&nbsp;
+
 A Kubernetes-optimized Synapse image, some old example manifests can be found in the [kubernetes](kubernetes/) folder.
 
 For a managed deployment, look at the charts available at;  
