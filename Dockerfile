@@ -1,4 +1,4 @@
-ARG SYNAPSE_VERSION="1.44.0"
+ARG SYNAPSE_VERSION="1.45.0"
 FROM matrixdotorg/synapse:v${SYNAPSE_VERSION}
 
 MAINTAINER Alexander Olofsson <ace@haxalot.com>
