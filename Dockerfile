@@ -1,5 +1,5 @@
-ARG SYNAPSE_VERSION="1.100.0"
-FROM matrixdotorg/synapse:v${SYNAPSE_VERSION}
+ARG SYNAPSE_VERSION="1.101.0"
+FROM ghcr.io/element-hq/synapse:v${SYNAPSE_VERSION}
 
 MAINTAINER Alexander Olofsson <ace@haxalot.com>
 
