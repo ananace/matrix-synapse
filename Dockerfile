@@ -1,4 +1,4 @@
-ARG SYNAPSE_VERSION="1.105.0"
+ARG SYNAPSE_VERSION="1.105.1"
 FROM ghcr.io/element-hq/synapse:v${SYNAPSE_VERSION}
 
 MAINTAINER Alexander Olofsson <ace@haxalot.com>
